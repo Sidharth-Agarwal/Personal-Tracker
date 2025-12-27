@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import CommandPalette from '../common/CommandPalette';
+import PWAInstallPrompt from '../common/PWAInstallPrompt';
 import { useFocusMode } from '../../context/FocusModeContext';
 import useKeyboardShortcuts from '../../hooks/useKeyboardShortcuts';
 
@@ -28,6 +29,7 @@ const Dashboard = () => {
         </main>
       </div>
       <CommandPalette />
+      <PWAInstallPrompt />
     </div>
   );
 };

@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { TaskProvider } from './context/TaskContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { FocusModeProvider } from './context/FocusModeContext';
+import { ToastProvider } from './context/ToastContext';
+import Toast from './components/common/Toast';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -93,9 +95,12 @@ function App() {
     <Router>
       <ThemeProvider>
         <FocusModeProvider>
-          <AuthProvider>
-            <AppRoutes />
-          </AuthProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <AppRoutes />
+              <Toast />
+            </AuthProvider>
+          </ToastProvider>
         </FocusModeProvider>
       </ThemeProvider>
     </Router>

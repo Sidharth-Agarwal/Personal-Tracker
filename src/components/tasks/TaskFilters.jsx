@@ -19,19 +19,19 @@ const TaskFilters = () => {
   };
 
   return (
-    <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+    <div className="flex gap-2 overflow-x-auto pb-1">
       {filterOptions.map((option) => (
         <button
           key={option.value}
           onClick={() => setFilter(option.value)}
-          className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+          className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
             filter === option.value
               ? 'bg-accent text-white'
-              : 'bg-bg-secondary text-text-secondary hover:bg-bg-tertiary'
+              : 'bg-bg-secondary text-text-primary hover:bg-bg-tertiary'
           }`}
         >
           {option.label}
-          <span className="ml-1 sm:ml-2 opacity-75">({getCount(option.value)})</span>
+          <span className="ml-2 opacity-75">({getCount(option.value)})</span>
         </button>
       ))}
     </div>

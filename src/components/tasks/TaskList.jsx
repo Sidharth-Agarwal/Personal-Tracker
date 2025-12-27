@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { useTask } from '../../context/TaskContext';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
+import BatchActions from './BatchActions';
 import Button from '../common/Button';
-import { Plus } from 'lucide-react';
+import { Plus, CheckSquare } from 'lucide-react';
 import useKeyboardShortcuts from '../../hooks/useKeyboardShortcuts';
 
 const TaskList = () => {
-  const { tasks, toggleTaskComplete, removeTask, editTask, createTask, loading, error, refreshTasks } = useTask();
+  const { tasks, toggleTaskComplete, removeTask, editTask, createTask, loading, error, refreshTasks, reorderTasks, sortBy } = useTask();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [batchMode, setBatchMode] = useState(false);
+  const [selectedTasks, setSelectedTasks] = useState([]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
@@ -64,6 +68,39 @@ const TaskList = () => {
     setEditingTask(null);
   };
 
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    if (result.source.index === result.destination.index) return;
+
+    reorderTasks(result.source.index, result.destination.index);
+  };
+
+  const toggleBatchMode = () => {
+    setBatchMode(!batchMode);
+    setSelectedTasks([]);
+  };
+
+  const toggleTaskSelection = (taskId) => {
+    setSelectedTasks(prev =>
+      prev.includes(taskId)
+        ? prev.filter(id => id !== taskId)
+        : [...prev, taskId]
+    );
+  };
+
+  const selectAllTasks = () => {
+    if (selectedTasks.length === tasks.length) {
+      setSelectedTasks([]);
+    } else {
+      setSelectedTasks(tasks.map(task => task.id));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedTasks([]);
+    setBatchMode(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -87,32 +124,89 @@ const TaskList = () => {
             {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
           </p>
         </div>
-        <Button variant="primary" onClick={handleCreate} className="w-full sm:w-auto">
-          <Plus size={20} />
-          <span>New Task</span>
-        </Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          {batchMode && tasks.length > 0 && (
+            <Button variant="secondary" onClick={selectAllTasks} className="text-sm">
+              <CheckSquare size={16} />
+              <span>{selectedTasks.length === tasks.length ? 'Deselect All' : 'Select All'}</span>
+            </Button>
+          )}
+          <Button
+            variant={batchMode ? 'primary' : 'secondary'}
+            onClick={toggleBatchMode}
+            className="text-sm"
+            disabled={tasks.length === 0}
+          >
+            <CheckSquare size={16} />
+            <span>{batchMode ? 'Exit Batch' : 'Batch Select'}</span>
+          </Button>
+          <Button variant="primary" onClick={handleCreate} className="w-full sm:w-auto">
+            <Plus size={20} />
+            <span>New Task</span>
+          </Button>
+        </div>
       </div>
 
-      <div className="space-y-3">
-        {tasks.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-text-tertiary mb-4">No tasks yet</p>
-            <Button variant="secondary" onClick={handleCreate}>
-              Create your first task
-            </Button>
-          </div>
-        ) : (
-          tasks.map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              onToggle={handleToggle}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
-            />
-          ))
-        )}
-      </div>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="tasks" isDropDisabled={sortBy !== 'custom'}>
+          {(provided) => (
+            <div
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+              className="space-y-3"
+            >
+              {tasks.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-text-tertiary mb-4">No tasks yet</p>
+                  <Button variant="secondary" onClick={handleCreate}>
+                    Create your first task
+                  </Button>
+                </div>
+              ) : (
+                tasks.map((task, index) => (
+                  <Draggable
+                    key={task.id}
+                    draggableId={task.id}
+                    index={index}
+                    isDragDisabled={sortBy !== 'custom'}
+                  >
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        style={{
+                          ...provided.draggableProps.style,
+                          opacity: snapshot.isDragging ? 0.8 : 1,
+                        }}
+                      >
+                        <TaskItem
+                          task={task}
+                          onToggle={handleToggle}
+                          onDelete={handleDelete}
+                          onEdit={handleEdit}
+                          batchMode={batchMode}
+                          isSelected={selectedTasks.includes(task.id)}
+                          onSelect={() => toggleTaskSelection(task.id)}
+                        />
+                      </div>
+                    )}
+                  </Draggable>
+                ))
+              )}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+
+      {/* Batch Actions Bar */}
+      {batchMode && (
+        <BatchActions
+          selectedTasks={selectedTasks}
+          onClearSelection={clearSelection}
+        />
+      )}
 
       <TaskForm
         isOpen={isFormOpen}
